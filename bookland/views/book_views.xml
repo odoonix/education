@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
 
+    <!-- Book Form -->
     <record id="book_form_view" model="ir.ui.view">
         <field name="name">Book Form</field>
         <field name="model">bookland.book</field>
@@ -13,6 +14,18 @@
                     <group name="publication">
                         <field name="publish_date" />
                     </group>
+                    <group name="price">
+                        <field name="price" />
+                        <field name="currency_id" />
+                    </group>
+                    <group name="isbn">
+                        <field name="isbn" />
+                    </group>
+                    <field name="quantity" />
+                    <field name="author_ids" />
+
+
+
                 </group>
                 <notebook>
                     <page name="description" string="Description">
@@ -23,6 +36,7 @@
         </field>
     </record>
 
+    <!-- Book List -->
 
     <record id="book_list_view" model="ir.ui.view">
         <field name="name">Book List</field>
@@ -31,13 +45,13 @@
             <tree>
                 <field name="name" />
                 <field name="publish_date" />
+                <field name="price" />
+                <field name="currency_id" />
             </tree>
         </field>
     </record>
 
-
-
-
+    <!-- Book Action -->
 
     <record id="books_list_action" model="ir.actions.act_window">
         <field name="name">Book List</field>
@@ -45,8 +59,7 @@
         <field name="view_mode">tree,form</field>
     </record>
 
-
-
+    <!-- Book Menu -->
 
     <record id="main_menu" model="ir.ui.menu">
         <field name="name">Bookland</field>

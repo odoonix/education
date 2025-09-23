@@ -1,7 +1,12 @@
 
+# Version 1.0.0
 
-# نسخه ۱.۰.۰
+the initial software structure has been stablished.
 
-در این نسخه ساختار اولیه نرم افزار ایجاد شده و امکانات زیر ایجاد شده است.
+# Version 1.1.0
 
-* TODO:
+Added Book defining ability
+
+# Version 1.2.0
+
+Added book lending ability

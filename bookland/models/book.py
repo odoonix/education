@@ -1,12 +1,17 @@
+"""Book model representing a library book with price, quantity, authors."""
+
+# pylint: disable=E0611,W0611
+
+
 from odoo import fields, models
 
 
 class BooklandBook(models.Model):
-    # Model Attributes
+    """Book model representing a library book with price, quantity, authors."""
+
     _name = "bookland.book"
     _description = "Book"
 
-    # Fields
     name = fields.Char(
         string="Book Title",
         help="Store the title of the book",
@@ -16,30 +21,34 @@ class BooklandBook(models.Model):
         size=512,
     )
     description = fields.Html(
-        # string="Description"
         required=False,
         translate=True,
         index=False,
     )
-    publish_date = fields.Date(string="Publish")
+    publish_date = fields.Date()
+    isbn = fields.Char(size=13)
 
-    # time_to_market_date = {
-    #     "type": "date",
-    #     "name": "present_date",
-    #     "note": "This is when the book is present to market"
-    # }
-    time_to_market_date = fields.Date(required=False)
-
-    price = fields.Float(
+    price = fields.Monetary(
         string="Book Price",
-        required=False,
-        digits=2,
-        index=False,
-        default=10.50,
-        readonly=True,
-        groups="base.user_group",
+        required=True,
+        # default=10.50,
         help="""
 <h1>Price of the Book</h1>
 <p>How much the book should sell on store</p>
 """,
+    )
+
+    quantity = fields.Integer(string="Available Quantity", default=1)
+
+    currency_id = fields.Many2one(
+        "res.currency",
+        string="Currency",
+        default=lambda self: self.env.company.currency_id,
+    )
+
+    author_ids = fields.Many2many(
+        "res.partner",
+        string="Authors",
+        domain=[("is_author", "=", True)],
+        required=True,
     )

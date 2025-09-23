@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 book_global_access,Book Global Access,model_bookland_book,,1,0,0,0
 book_base_users_access,Book Global Access,model_bookland_book,base.group_user,1,1,1,1
+loan_global_access,loan global acsses,model_bookland_loan,,1,1,1,1

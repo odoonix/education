@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <!-- Loan Form -->
+    <record id="loan_form_view" model="ir.ui.view">
+        <field name="name">Loan Form</field>
+        <field name="model">bookland.loan</field>
+        <field name="arch" type="xml">
+            <form string="Loan">
+                <group>
+                    <group>
+                        <field name="date" />
+                        <field name="expire_date" />
+                    </group>
+                    <group>
+                        <field name="loaner_id" />
+                        <field name="book_id" />
+                    </group>
+                    <field name="state" />
+
+                </group>
+                <notebook>
+                    <page string="Note">
+                        <field name="note" />
+                    </page>
+                </notebook>
+            </form>
+        </field>
+    </record>
+
+    <!-- Loan List -->
+    <record id="loan_list_view" model="ir.ui.view">
+        <field name="name">Loan List</field>
+        <field name="model">bookland.loan</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="date" />
+                <field name="expire_date" />
+                <field name="loaner_id" />
+                <field name="book_id" />
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="loan_list_action" model="ir.actions.act_window">
+        <field name="name">Loans</field>
+        <field name="res_model">bookland.loan</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Menu -->
+    <record id="loan_list_menu" model="ir.ui.menu">
+        <field name="name">Loans</field>
+        <field name="parent_id" ref="bookland.main_menu" />
+        <field name="action" ref="bookland.loan_list_action" />
+        <field name="sequence" eval="17" />
+    </record>
+
+</odoo>
