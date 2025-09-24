@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <odoo>
 
     <!-- Book Form -->
@@ -22,10 +22,14 @@
                     <group name="isbn">
                         <field name="isbn" />
                     </group>
-                    <field name="quantity" />
-                    <field name="author_ids" />
+                    <group name="quantity">
+                        <field name="quantity" />
+                    </group>
                     <group name="Language">
                         <field name="language_id" />
+                    </group>
+                    <group name="author_ids">
+                        <field name="author_ids" />
                     </group>
                 </group>
                 <notebook>
@@ -47,7 +51,7 @@
                 <field name="name" />
                 <field name="publish_date" />
                 <field name="price" />
-                <field name="currency_id" invisible="1"/>
+                <field name="currency_id" invisible="1" />
                 <field name="language_id" />
             </tree>
         </field>

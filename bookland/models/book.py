@@ -3,7 +3,6 @@
 # pylint: disable=E0611,W0611
 
 
-from string import digits
 from odoo import fields, models
 
 

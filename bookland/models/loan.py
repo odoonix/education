@@ -2,7 +2,8 @@
 
 # pylint: disable=E0611,W0611
 
-from odoo import fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class BooklandLoan(models.Model):
@@ -34,3 +35,9 @@ class BooklandLoan(models.Model):
             ("returned", "Returned"),
         ],
     )
+
+    @api.constrains("expire_date", "date")
+    def _check_dates(self):
+        for rec in self:
+            if rec.expire_date and rec.date and rec.expire_date < rec.date:
+                raise ValidationError(_("Expire date cannot be before loan date."))
