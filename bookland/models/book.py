@@ -3,6 +3,7 @@
 # pylint: disable=E0611,W0611
 
 
+from string import digits
 from odoo import fields, models
 
 
@@ -31,7 +32,6 @@ class BooklandBook(models.Model):
     price = fields.Monetary(
         string="Book Price",
         required=True,
-        # default=10.50,
         help="""
 <h1>Price of the Book</h1>
 <p>How much the book should sell on store</p>
@@ -43,8 +43,8 @@ class BooklandBook(models.Model):
     currency_id = fields.Many2one(
         "res.currency",
         string="Currency",
-        default=lambda self: self.env.company.currency_id,
     )
+    language_id = fields.Many2one("res.lang")
 
     author_ids = fields.Many2many(
         "res.partner",
