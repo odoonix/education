@@ -3,7 +3,8 @@
 # pylint: disable=E0611,W0611
 
 
-from odoo import fields, models
+from odoo import fields, models, api
+from odoo.exceptions import UserError
 
 
 class BooklandBook(models.Model):
@@ -51,3 +52,18 @@ class BooklandBook(models.Model):
         domain=[("is_author", "=", True)],
         required=True,
     )
+
+    def action_open_loan_form(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Loan",
+            "res_model": "bookland.loan",
+            "view_mode": "form",
+            "view_id": self.env.ref("bookland.loan_form_view").id,
+            "target": "new",
+            "context": {
+                "default_book_id": self.id,
+                "default_date": fields.Date.today(),
+            },
+        }
