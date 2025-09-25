@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <odoo>
 
     <!-- Book Form -->
@@ -31,10 +31,12 @@
                         <field name="author_ids" />
                     </group>
                     <header>
-                        <button name="action_open_loan_form"
+                        <button
+                            name="action_open_loan_form"
                             string="Create Loan"
                             type="object"
-                            class="btn-primary" />
+                            class="btn-primary"
+                        />
                     </header>
                 </group>
                 <notebook>
