@@ -41,7 +41,7 @@ class BooklandLoan(models.Model):
         for rec in self:
             if rec.expire_date and rec.date and rec.expire_date < rec.date:
                 raise ValidationError(_("Expire date cannot be before loan date."))
-    @api.constrains('book_ids')
+    @api.constrains('book_id')
     def _check_book_quantity(self):
         for rec in self:
             if rec.book_id.quantity < 1 and rec.state == 'borrowed':
