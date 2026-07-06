@@ -1,0 +1,53 @@
+
+services:
+  db:
+    image: postgres:15
+    container_name: odoo_sync_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: odoo_sync
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - odoo_sync_network
+
+  app:
+    build: .
+    container_name: odoo_sync_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Database - override for Docker
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: odoo_sync
+      # Odoo - you'll need to set these
+      ODOO_URL: ${ODOO_URL}
+      ODOO_DB: ${ODOO_DB}
+      ODOO_API_KEY: ${ODOO_API_KEY}
+      # App
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./:/app
+      - /app/venv  # Ignore local venv
+    networks:
+      - odoo_sync_network
+    # Run with --build flag to rebuild when code changes
+
+networks:
+  odoo_sync_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -62,6 +62,7 @@ coverage.xml
 # Visual Studio cache/options directory
 .vs/
 .vscode
+venv/
 
 # OSX Files
 .DS_Store
@@ -86,3 +87,4 @@ docs/_build/
 
 # OCA rules
 !static/lib/
+.env
