@@ -61,6 +61,9 @@ services:
       --db_host=db
       --db_user=${ODOO_PG_USER}
       --db_password=${ODOO_PG_PASSWORD}
+      -d odoo
+      -i website_sale
+      --without-demo=all
 
 volumes:
   postgres_data:
