@@ -9,10 +9,13 @@ from app.domain.ports.db_session import IDBConnection
 
 
 class PostgreSQLConnection(IDBConnection):
-    print(settings.POSTGRES_DATABASE_URL)
+
     def __init__(self):
+        database_url = str(settings.POSTGRES_DATABASE_URL).replace(
+            "postgresql://", "postgresql+psycopg://", 1
+        )
         self._engine: Engine = create_engine(
-            settings.POSTGRES_DATABASE_URL, 
+            database_url,
             echo=False,
             pool_pre_ping=True,
             pool_size=10,
