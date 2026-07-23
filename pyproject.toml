@@ -16,6 +16,12 @@ dependencies = [
     "pytest-cov",
 ]
 
+[tool.setuptools]
+packages = ["app"]
+
+[tool.setuptools.package-dir]
+app = "app"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
