@@ -135,6 +135,10 @@ def upgrade() -> None:
     op.create_index(op.f("ix_sale_order_lines_odoo_id"), "sale_order_lines", ["odoo_id"], unique=True)
     op.create_index(op.f("ix_sale_order_lines_product_id"), "sale_order_lines", ["product_id"], unique=False)
     op.create_index(op.f("ix_sale_order_lines_sale_order_id"), "sale_order_lines", ["sale_order_id"], unique=False)
+    
+    op.drop_index(op.f("ix_items_name"), table_name="items")
+    op.drop_index(op.f("ix_items_id"), table_name="items")
+    op.drop_table("items")
 
 
 def downgrade() -> None:

@@ -1,5 +1,5 @@
 from app.integrations.odoo_client import OdooClient, OdooClientError
-from app.schemas.odoo import OdooHealth, OdooPartnerCreate, OdooPartnerRead
+from app.schemas.odoo import OdooHealth
 
 
 class OdooService:
@@ -8,18 +8,6 @@ class OdooService:
 
     def health(self) -> OdooHealth:
         return self.client.health()
-
-    def list_partners(self, limit: int = 20) -> list[OdooPartnerRead]:
-        try:
-            return self.client.list_partners(limit=limit)
-        except OdooClientError as exc:
-            raise RuntimeError(str(exc)) from exc
-
-    def create_partner(self, payload: OdooPartnerCreate) -> OdooPartnerRead:
-        try:
-            return self.client.create_partner(payload)
-        except OdooClientError as exc:
-            raise RuntimeError(str(exc)) from exc
 
     def seed_demo_data(self) -> dict[str, int | list[int]]:
         try:

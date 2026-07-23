@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: fastapi_odoo_db
+    container_name: db
     restart: unless-stopped
     env_file: .env
     environment:
@@ -23,11 +23,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: fastapi_odoo_api
+    container_name: fastapi
     restart: unless-stopped
     env_file: .env
     ports:
-      - "8000:8000"
+      - "8080:8000"
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
@@ -41,7 +41,7 @@ services:
 
   odoo:
     image: odoo:17.0
-    container_name: fastapi_odoo_erp
+    container_name: odoo_erp
     restart: unless-stopped
     depends_on:
       db:
@@ -61,7 +61,6 @@ services:
       --db_host=db
       --db_user=${ODOO_PG_USER}
       --db_password=${ODOO_PG_PASSWORD}
-      --admin-passwd=${ODOO_MASTER_PASSWORD}
 
 volumes:
   postgres_data:

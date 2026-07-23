@@ -4,11 +4,13 @@ FastAPI with layered architecture, PostgreSQL, SQLAlchemy/Alembic, and Odoo — 
 
 ## Services
 
-| Service | URL | Role |
-|---------|-----|------|
-| `api` | http://localhost:8000/docs | FastAPI app |
-| `db` | localhost:5432 | PostgreSQL (shared) |
-| `odoo` | http://localhost:8069 | Odoo 17 |
+
+| Service | URL                                                      | Role                |
+| ------- | -------------------------------------------------------- | ------------------- |
+| `api`   | [http://localhost:8000/docs](http://localhost:8000/docs) | FastAPI app         |
+| `db`    | localhost:5432                                           | PostgreSQL (shared) |
+| `odoo`  | [http://localhost:8069](http://localhost:8069)           | Odoo 17             |
+
 
 ## Architecture
 
@@ -24,41 +26,49 @@ app/
 └── main.py
 ```
 
+
+
 ## Start everything
 
 ```bash
 docker compose up --build
 ```
 
-1. Open **http://localhost:8069** and create an Odoo database named `odoo` (master password: `odoo` from `.env`).
+1. Open **[http://localhost:8069](http://localhost:8069)** and create an Odoo database named `odoo` (master password: `odoo` from `.env`).
 2. Set admin email/password (defaults expected by the API: `admin` / `admin` — or update `ODOO_USER` / `ODOO_PASSWORD` in `.env`).
-3. Open **http://localhost:8000/docs** and try:
-   - `GET /api/v1/health`
-   - `GET /api/v1/odoo/health`
-   - `POST /api/v1/items` then `POST /api/v1/items/{id}/sync-odoo`
+3. Open **[http://localhost:8080/docs](http://localhost:8000/docs)** and try:
+  - `GET /api/v1/health`
+  - `GET /api/v1/odoo/health`
+  - `POST /api/v1/odoo/seed-demo` then `/api/v1/sync`
+
+
 
 ## Odoo → FastAPI sync
 
 Entities are synced from Odoo by `odoo_id`. Existing records are **updated**, new ones are **created**.
 
-| Odoo model | Local entity |
-|------------|--------------|
-| `res.partner` | `contacts` |
-| `product.product` | `products` |
-| `sale.order` | `sale_orders` |
+
+| Odoo model        | Local entity       |
+| ----------------- | ------------------ |
+| `res.partner`     | `contacts`         |
+| `product.product` | `products`         |
+| `sale.order`      | `sale_orders`      |
 | `sale.order.line` | `sale_order_lines` |
+
+
+
 
 ### Workflow
 
 1. Start stack: `docker compose up --build`
-2. Create Odoo DB at http://localhost:8069 (name: `odoo`, master pwd: `odoo`)
-3. Install the **Sales** app in Odoo (Apps → Sales → Activate)
+2. Create Odoo DB at [http://localhost:8069](http://localhost:8069) (name: `odoo`, master pwd: `odoo`)
+3. Install the **Sales** app(or eCommerce app) in Odoo (Apps → Sales → Activate)
 4. Seed demo data in Odoo: `POST /api/v1/odoo/seed-demo`
 5. Sync into Postgres: `POST /api/v1/sync`
 6. Read local data:
-   - `GET /api/v1/contacts`
-   - `GET /api/v1/products`
-   - `GET /api/v1/sale-orders`
+  - `GET /api/v1/contacts`
+  - `GET /api/v1/products`
+  - `GET /api/v1/sale-orders`
 
 Re-run `POST /api/v1/sync` anytime — changed Odoo records will update existing rows.
 
@@ -66,15 +76,19 @@ Partial sync endpoints: `/api/v1/sync/contacts`, `/sync/products`, `/sync/sale-o
 
 ## Useful API routes
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/health` | API liveness |
-| GET | `/api/v1/odoo/health` | Odoo XML-RPC connectivity |
-| POST | `/api/v1/odoo/seed-demo` | Create sample Odoo records |
-| POST | `/api/v1/sync` | Full sync (upsert all entities) |
-| GET | `/api/v1/contacts` | Local contacts |
-| GET | `/api/v1/products` | Local products |
-| GET | `/api/v1/sale-orders` | Local sale orders with lines |
+
+| Method | Path                     | Description                     |
+| ------ | ------------------------ | ------------------------------- |
+| GET    | `/api/v1/health`         | API liveness                    |
+| GET    | `/api/v1/odoo/health`    | Odoo XML-RPC connectivity       |
+| POST   | `/api/v1/odoo/seed-demo` | Create sample Odoo records      |
+| POST   | `/api/v1/sync`           | Full sync (upsert all entities) |
+| GET    | `/api/v1/contacts`       | Local contacts                  |
+| GET    | `/api/v1/products`       | Local products                  |
+| GET    | `/api/v1/sale-orders`    | Local sale orders with lines    |
+
+
+
 
 ## Migrations
 
@@ -82,6 +96,8 @@ Partial sync endpoints: `/api/v1/sync/contacts`, `/sync/products`, `/sync/sale-o
 docker compose exec api alembic revision --autogenerate -m "describe change"
 docker compose exec api alembic upgrade head
 ```
+
+
 
 ## Local API (optional)
 
@@ -94,3 +110,4 @@ copy .env.example .env
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
+

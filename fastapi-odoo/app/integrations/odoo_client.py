@@ -1,7 +1,7 @@
 from xmlrpc import client as xmlrpc_client
 
 from app.core.config import settings
-from app.schemas.odoo import OdooHealth, OdooPartnerCreate, OdooPartnerRead
+from app.schemas.odoo import OdooHealth
 from app.schemas.odoo_sync import (
     OdooContactData,
     OdooProductData,
@@ -215,53 +215,6 @@ class OdooClient:
         if not records:
             return None
         return OdooContactData.from_odoo(records[0])
-
-    def create_partner(self, payload: OdooPartnerCreate) -> OdooPartnerRead:
-        values = {"name": payload.name, "customer_rank": 1}
-        if payload.email:
-            values["email"] = payload.email
-        if payload.phone:
-            values["phone"] = payload.phone
-
-        partner_id = self.execute_kw("res.partner", "create", [values])
-        records = self.execute_kw(
-            "res.partner",
-            "read",
-            [[partner_id]],
-            {"fields": ["id", "name", "email", "phone"]},
-        )
-        record = records[0]
-        return OdooPartnerRead(
-            id=record["id"],
-            name=record["name"],
-            email=record.get("email") or None,
-            phone=record.get("phone") or None,
-        )
-
-    def list_partners(self, limit: int = 20) -> list[OdooPartnerRead]:
-        ids = self.execute_kw(
-            "res.partner",
-            "search",
-            [[("customer_rank", ">", 0)]],
-            {"limit": limit, "order": "id desc"},
-        )
-        if not ids:
-            return []
-        records = self.execute_kw(
-            "res.partner",
-            "read",
-            [ids],
-            {"fields": ["id", "name", "email", "phone"]},
-        )
-        return [
-            OdooPartnerRead(
-                id=r["id"],
-                name=r["name"],
-                email=r.get("email") or None,
-                phone=r.get("phone") or None,
-            )
-            for r in records
-        ]
 
     def _create_sale_product(self, name: str, code: str, price: float) -> int:
         template_id = self.execute_kw(
