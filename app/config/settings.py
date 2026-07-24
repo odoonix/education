@@ -7,11 +7,18 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(case_sensitive=True)
 
+    # Database
     DATABASE_NAME: str
     DATABASE_USER: str
     DATABASE_PASSWORD: str
     DATABASE_HOST: str
     DATABASE_PORT: str
+
+    # Odoo
+    ODOO_URL: str
+    ODOO_USERNAME: str
+    ODOO_DB_NAME: str
+    ODOO_PASSWORD: str
 
     POSTGRES_DATABASE_URL: PostgresDsn | None = None
 
