@@ -14,6 +14,7 @@ from odoo_sync.domain.exceptions import MissingReferenceError
 from odoo_sync.domain.models import Contact, Product, SaleOrder, SaleOrderLine
 from odoo_sync.domain.read_outcome import ReadRecord
 from odoo_sync.domain.sync import SyncCounters, SyncRunSummary, SyncStatus, SyncType, UpsertResult
+from odoo_sync.application.ports.sync_lock import SyncLock
 
 T = TypeVar("T")
 
