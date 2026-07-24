@@ -9,6 +9,7 @@ from odoo_sync.bootstrap import build_container
 from odoo_sync.domain.pagination import PageSize
 from odoo_sync.domain.sync import SyncStatus, SyncType
 from odoo_sync.presentation.cli.output import format_summary
+from odoo_sync.application.ports.sync_lock import ConcurrentSyncError
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -37,6 +38,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(format_summary(summary))
         return 0 if summary.status is SyncStatus.SUCCESS else 2
+    except ConcurrentSyncError as exc:
+        print(str(exc), file=sys.stderr)
+        return 75
     except (ValidationError, ValueError) as exc:
         print(f"configuration error: {exc}", file=sys.stderr)
         return 2

@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from typing import Any, cast
+from collections.abc import Generator
+from contextlib import contextmanager
 
 import pytest
 
@@ -34,6 +36,10 @@ class FakeErp:
     def iter_sale_order_lines(self, **_: Any) -> Any:
         return iter(())
 
+class FakeSyncLock:
+    @contextmanager
+    def acquire(self) -> Generator[None]:
+        yield
 
 class FakeContacts:
     def find_id_by_odoo_id(self, odoo_id: int) -> int | None:
@@ -90,10 +96,11 @@ class FakeUow:
 
 def test_sync_continues_after_record_error_and_sanitizes_log() -> None:
     service = SyncService(
-        FakeErp(),
-        lambda: cast(UnitOfWork, FakeUow()),
-        logging.getLogger("test"),
-        ShutdownFlag(),
+        erp=FakeErp(),
+        uow_factory=lambda: cast(UnitOfWork, FakeUow()),
+        logger=logging.getLogger("test"),
+        shutdown=ShutdownFlag(),
+        sync_lock=FakeSyncLock(),
     )
     summary = service.sync(sync_type=SyncType.FULL, page_size=2)
 

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     sync_db_database: str = "odoo_sync"
     sync_db_username: str = "odoo_sync"
     sync_db_password: str = "odoo_sync"
+    sync_lock_key: int = 741_017_001
 
     log_level: str = "INFO"
     log_format: Literal["text", "json"] = "json"

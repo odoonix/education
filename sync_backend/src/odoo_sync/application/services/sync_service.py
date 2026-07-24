@@ -24,54 +24,132 @@ class SyncService:
     uow_factory: UnitOfWorkFactory
     logger: logging.Logger
     shutdown: ShutdownFlag
+    sync_lock: SyncLock
 
-    def sync(self, *, sync_type: SyncType, page_size: int) -> SyncRunSummary:
+    def sync(
+        self,
+        *,
+        sync_type: SyncType,
+        page_size: int,
+    ) -> SyncRunSummary:
+        with self.sync_lock.acquire():
+            return self._sync_locked(
+                sync_type=sync_type,
+                page_size=page_size,
+            )
+
+    def _sync_locked(
+        self,
+        *,
+        sync_type: SyncType,
+        page_size: int,
+    ) -> SyncRunSummary:
         started = datetime.now(UTC)
         counters = SyncCounters()
+
         lower, upper = self._watermarks(sync_type)
-        run_id = self._start_run(sync_type, lower, upper, started)
+        run_id = self._start_run(
+            sync_type,
+            lower,
+            upper,
+            started,
+        )
+
         status = SyncStatus.SUCCESS
         fatal: str | None = None
-        self.logger.info("sync started", extra={"sync_type": sync_type.value, "run_id": run_id})
+
+        self.logger.info(
+            "sync started",
+            extra={
+                "sync_type": sync_type.value,
+                "run_id": run_id,
+            },
+        )
+
         try:
             self._process(
                 "contact",
-                self.erp.iter_contacts(page_size=page_size, lower=lower, upper=upper),
+                self.erp.iter_contacts(
+                    page_size=page_size,
+                    lower=lower,
+                    upper=upper,
+                ),
                 counters,
                 run_id,
                 self._persist_contact,
             )
+
             self._process(
                 "product",
-                self.erp.iter_products(page_size=page_size, lower=lower, upper=upper),
+                self.erp.iter_products(
+                    page_size=page_size,
+                    lower=lower,
+                    upper=upper,
+                ),
                 counters,
                 run_id,
                 self._persist_product,
             )
+
             self._process(
                 "sale_order",
-                self.erp.iter_sale_orders(page_size=page_size, lower=lower, upper=upper),
+                self.erp.iter_sale_orders(
+                    page_size=page_size,
+                    lower=lower,
+                    upper=upper,
+                ),
                 counters,
                 run_id,
                 self._persist_sale_order,
             )
+
             self._process(
                 "sale_order_line",
-                self.erp.iter_sale_order_lines(page_size=page_size, lower=lower, upper=upper),
+                self.erp.iter_sale_order_lines(
+                    page_size=page_size,
+                    lower=lower,
+                    upper=upper,
+                ),
                 counters,
                 run_id,
                 self._persist_sale_order_line,
             )
+
             if self.shutdown.cancelled:
                 status = SyncStatus.CANCELLED
+
         except Exception as exc:
             status = SyncStatus.FAILED
             fatal = sanitize_error(exc)
-            self.logger.error("sync fatal failure", extra={"run_id": run_id, "error": fatal})
+
+            self.logger.error(
+                "sync fatal failure",
+                extra={
+                    "run_id": run_id,
+                    "error": fatal,
+                },
+            )
+
         finished = datetime.now(UTC)
-        self._finish_run(run_id, status, finished, counters, fatal)
+
+        self._finish_run(
+            run_id,
+            status,
+            finished,
+            counters,
+            fatal,
+        )
+
         return SyncRunSummary(
-            run_id, sync_type, status, started, finished, counters, lower, upper, fatal
+            run_id,
+            sync_type,
+            status,
+            started,
+            finished,
+            counters,
+            lower,
+            upper,
+            fatal,
         )
 
     def _watermarks(self, sync_type: SyncType) -> tuple[datetime | None, datetime | None]:
