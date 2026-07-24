@@ -64,7 +64,8 @@ The project uses **uv** as the Python package manager.
 Execute the seeder from the project root:
 
 ```bash
-uv run python seed/seed.py
+cd seed
+uv run python seed.py
 ```
 
 ---
