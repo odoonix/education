@@ -1,0 +1,64 @@
+services:
+  odoo-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  odoo:
+    image: odoo:18.0
+    depends_on:
+      odoo-db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: odoo-db
+      PORT: 5432
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+
+  app-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: odoo_sync
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5433:5432"
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d odoo_sync"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  sync-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
+    ports:
+      - "8000:8000"
+    depends_on:
+      app-db:
+        condition: service_healthy
+      odoo:
+        condition: service_started
+
+volumes:
+  odoo-db-data:
+  odoo-web-data:
+  app-db-data:
