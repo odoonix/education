@@ -1,35 +1,268 @@
+# Odoo Sync Backend Challenge
 
-<!-- /!\ Non OCA Context : Set here the badge of your runbot / runboat instance. -->
-[![Pre-commit Status](https://github.com/odoonix/education/actions/workflows/pre-commit.yml/badge.svg?branch=17.0)](https://github.com/odoonix/education/actions/workflows/pre-commit.yml?query=branch%3A17.0)
-[![Build Status](https://github.com/odoonix/education/actions/workflows/test.yml/badge.svg?branch=17.0)](https://github.com/odoonix/education/actions/workflows/test.yml?query=branch%3A17.0)
-[![codecov](https://codecov.io/gh/odoonix/education/branch/17.0/graph/badge.svg)](https://codecov.io/gh/odoonix/education)
-<!-- /!\ Non OCA Context : Set here the badge of your translation instance. -->
+## Overview
 
-<!-- /!\ do not modify above this line -->
+This project is an implementation of an Odoo synchronization backend built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, **Alembic**, **Docker**, and **uv**.
 
-# Education, moderl education management system
+The goal is to build a maintainable backend capable of synchronizing data between Odoo and a local PostgreSQL database using a layered architecture.
 
-Education management tools
+Due to time constraints, the project focuses on establishing a clean and extensible architecture rather than implementing every planned feature.
 
-<!-- /!\ do not modify below this line -->
+---
 
-<!-- prettier-ignore-start -->
+# Project Structure
 
-[//]: # (addons)
+```
+.
+├── addons/
+├── backend/
+│   ├── app/
+│   │   ├── adapters/
+│   │   ├── api/
+│   │   ├── config/
+│   │   ├── core/
+│   │   ├── database/
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   └── utils/
+│   ├── migrations/
+│   └── tests/
+│
+├── docker/
+├── seed/
+└── docker-compose.yml
+```
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+---
 
-[//]: # (end addons)
+# Architecture
 
-<!-- prettier-ignore-end -->
+The backend follows a layered architecture in order to keep responsibilities separated and make the project easier to maintain and extend.
 
-## Licenses
+## API
 
-This repository is licensed under [AGPL-3.0](LICENSE).
+Responsible only for exposing HTTP endpoints.
 
-However, each module can have a totally different license, as long as they adhere to Odoonix
-policy. Consult each module's `__manifest__.py` file, which contains a `license` key
-that explains its license.
+No business logic should live here.
 
-----
-<!-- /!\ Non OCA Context : Set here the full description of your organization. -->
+---
+
+## Services
+
+Contains the application's business logic.
+
+Services orchestrate repositories, adapters and external integrations.
+
+---
+
+## Repositories
+
+Responsible for all database operations.
+
+Business logic never communicates directly with SQLAlchemy models.
+
+---
+
+## Models
+
+Database entities implemented using SQLAlchemy ORM.
+
+---
+
+## Database
+
+Contains:
+
+* SQLAlchemy Engine
+* Session management
+* Base model
+* Dependency injection
+* Alembic configuration
+
+---
+
+## Adapters
+
+Responsible for communicating with external systems.
+
+In this project the Odoo XML-RPC integration is intended to live here.
+
+---
+
+## Schemas
+
+Pydantic request/response models.
+
+---
+
+## Utils
+
+Common helper functions.
+
+---
+
+# Current Progress
+
+## Docker Infrastructure
+
+The project includes Docker configuration for:
+
+* FastAPI
+* PostgreSQL (Backend)
+* PostgreSQL (Odoo)
+* Odoo
+* Nginx
+
+Health checks are configured for all services.
+
+Environment variables are loaded from `.env`.
+
+---
+
+## Seed Module
+
+A standalone seed module has been implemented.
+
+It connects to Odoo through XML-RPC and automatically inserts sample data.
+
+The following records are created:
+
+* Contacts
+* Products
+* Sale Orders
+* Sale Order Lines
+
+The seed module is intentionally isolated from the backend application.
+
+A dedicated README is available inside the `seed/` directory describing how to execute it.
+
+---
+
+# Running the Seed
+
+Before running the seed:
+
+1. Start Docker services.
+2. Wait until Odoo is ready.
+3. Open Odoo in the browser.
+4. Login as administrator.
+5. Install the required Odoo applications:
+
+   * Contacts
+   * Sales
+   * Inventory
+
+After Odoo is initialized, execute the seed module following the instructions available inside:
+
+```
+seed/README.md
+```
+
+---
+
+# Database
+
+The database layer has been fully initialized.
+
+Implemented components:
+
+* SQLAlchemy Engine
+* Session management
+* Declarative Base
+* Alembic configuration
+* Initial database migration
+
+Current database models:
+
+* Contact
+* Product
+* SaleOrder
+* SaleOrderLine
+
+Relationships between models have also been defined.
+
+---
+
+# Repository Layer
+
+A generic Base Repository has been implemented to avoid duplicated CRUD logic.
+
+Concrete repositories currently include:
+
+* ContactRepository
+* ProductRepository
+* SaleOrderRepository
+
+Repository tests have been started as part of the project.
+
+---
+
+# Development Commands
+
+All backend commands are executed through **uv** inside the backend container.
+
+Examples:
+
+Create migration:
+
+```bash
+docker compose exec backend uv run alembic revision --autogenerate -m "message"
+```
+
+Apply migrations:
+
+```bash
+docker compose exec backend uv run alembic upgrade head
+```
+
+Run tests:
+
+```bash
+docker compose exec backend uv run pytest
+```
+
+---
+
+# Remaining Work
+
+Because of the limited implementation time, the following components were planned but not completed:
+
+* Odoo Adapter Layer
+* Synchronization Services
+* XML-RPC abstraction
+* Sync Scheduler
+* Retry mechanism
+* Synchronization logging
+* Sync history
+* Error handling improvements
+* API endpoints
+* Complete test suite
+
+The project structure has already been prepared for these components, allowing them to be implemented without major architectural changes.
+
+---
+
+# Design Decisions
+
+Several design choices were made to keep the project maintainable:
+
+* Layered Architecture
+* Repository Pattern
+* Environment-based configuration using Pydantic Settings
+* Dockerized development environment
+* Alembic migrations
+* Generic repositories to reduce duplicated code
+* Separation between Odoo integration and business logic
+* Dedicated seed module isolated from the backend
+
+---
+
+# Notes
+
+This repository represents the architectural foundation of the synchronization service.
+
+The infrastructure, project organization, database layer, migration system, repository layer and automatic Odoo data seeding have all been completed.
+
+The remaining work mainly consists of implementing synchronization workflows and business services on top of the existing architecture.
