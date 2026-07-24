@@ -60,7 +60,7 @@ services:
     environment:
       ODOO_URL: http://odoo:8069
       ODOO_DB: odoo
-      ODOO_USERNAME: farshid.1999.fm@gmail.com   
+      ODOO_USERNAME: admin  
       ODOO_PASSWORD: admin               
       DATABASE_URL: postgresql+psycopg://backend:backend@backend-db:5432/backend_sync
     volumes:
