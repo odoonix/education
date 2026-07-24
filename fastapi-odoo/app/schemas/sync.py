@@ -67,6 +67,7 @@ class SaleOrderRead(BaseModel):
 class SyncEntityResult(BaseModel):
     created: int = 0
     updated: int = 0
+    errored: int = 0
     total: int = 0
 
 
@@ -75,3 +76,13 @@ class SyncResult(BaseModel):
     products: SyncEntityResult
     sale_orders: SyncEntityResult
     sale_order_lines: SyncEntityResult
+
+class SyncRunCreate(BaseModel):
+    sync_type: str = "sync_all"
+    sync_start_time: datetime
+    sync_end_time: datetime
+    fetched_records: int = 0
+    stored_records: int = 0
+    updated_records: int = 0
+    error_records: int = 0
+    sync_error: str | None = None
