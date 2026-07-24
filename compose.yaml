@@ -82,6 +82,8 @@ services:
       dockerfile: sync_backend/Dockerfile
       target: test
     depends_on:
+      backend:
+        condition: service_completed_successfully
       odoo:
         condition: service_healthy
       sync-db:
@@ -92,8 +94,10 @@ services:
       ODOO_URL: http://odoo:8069
       SYNC_DB_HOST: sync-db
       RUN_DOCKER_TESTS: "1"
+      PYTHONPATH: /app/sync_backend/src
     volumes:
       - ./docker/odoo/seed_odoo.py:/seed/seed_odoo.py:ro
+      - ./sync_backend/src:/app/sync_backend/src:ro
       - ./sync_backend/tests:/app/sync_backend/tests:ro
     command: ["uv", "run", "pytest"]
 
