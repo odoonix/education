@@ -1,4 +1,5 @@
 from pathlib import Path
+from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -6,8 +7,11 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Education Backend"
-    APP_DEBUG: bool = True
+    APP_NAME: str
+    APP_VERSION: str
+
+    DATABASE_URL: str
+
     ODOO_URL: str
     ODOO_DATABASE: str
     ODOO_ADMIN_EMAIL: str
@@ -20,4 +24,9 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

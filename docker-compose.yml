@@ -63,7 +63,6 @@ services:
 
     volumes:
       - ./backend:/app
-      - backend_venv:/app/.venv
 
 
   backend-db:
@@ -107,4 +106,3 @@ volumes:
   odoo_data:
   postgres_data:
   backend_postgres_data:
-  backend_venv:
