@@ -11,6 +11,7 @@ dependencies = [
     "psycopg[binary]",
     "pydantic==2.12.5",
     "dependency-injector==4.48.3",
+    "pydantic-settings==2.13.1",
     "python-dotenv",
     "pytest",
     "pytest-cov",
