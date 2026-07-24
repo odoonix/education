@@ -4,6 +4,18 @@ __pycache__/
 /.venv
 /.pytest_cache
 /.ruff_cache
+.env
+**/.venv/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/__pycache__/
+**/.coverage
+htmlcov/
+coverage.xml
+*.pyc
+*.pyo
+*.log
 
 # C extensions
 *.so
