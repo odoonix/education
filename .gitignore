@@ -1,88 +1,40 @@
-# Byte-compiled / optimized / DLL files
+# Environment
+.env
+.venv/
+venv/
+
+# Python
 __pycache__/
 *.py[cod]
-/.venv
-/.pytest_cache
-/.ruff_cache
+*$py.class
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-env/
-bin/
-build/
-develop-eggs/
-dist/
-eggs/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-*.eggs
-
-# Windows installers
-*.msi
-
-# Debian packages
-*.deb
-
-# Redhat packages
-*.rpm
-
-# MacOS packages
-*.dmg
-*.pkg
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
+# Pytest
+.pytest_cache/
 .coverage
-.cache
-nosetests.xml
 coverage.xml
+htmlcov/
 
-# Translations
-*.mo
+# IDE
+.vscode/
+.idea/
 
-# Pycharm
-.idea
-
-# Eclipse
-.settings
-
-# Visual Studio cache/options directory
-.vs/
-.vscode
-
-# OSX Files
+# OS
 .DS_Store
+Thumbs.db
 
-# Django stuff:
+# Logs
 *.log
 
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
+# SQLAlchemy
+*.db
+*.sqlite3
 
-# Rope
-.ropeproject
 
-# Sphinx documentation
-docs/_build/
-
-# Backup files
-*~
-*.swp
-
-# OCA rules
-!static/lib/
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.idea/
