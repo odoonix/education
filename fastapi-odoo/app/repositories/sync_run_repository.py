@@ -30,5 +30,19 @@ class SyncRunRepository:
         self.db.commit()
         self.db.refresh(sync_run)
         return sync_run
+    
+    def update(self, sync_run_id: int, payload: SyncRunCreate) -> SyncRun:
+        sync_run = self.db.get(SyncRun, sync_run_id)
+
+        sync_run.sync_type = payload.sync_type
+        sync_run.sync_start_time = payload.sync_start_time
+        sync_run.sync_end_time = payload.sync_end_time
+        sync_run.fetched_records = payload.fetched_records
+        sync_run.stored_records = payload.stored_records
+        sync_run.updated_records = payload.updated_records
+        sync_run.error_records = payload.error_records
+        sync_run.sync_error = payload.sync_error
+        self.db.commit()
+        self.db.refresh(sync_run)
 
 get_sync_run_repo = SyncRunRepository(db=get_db())

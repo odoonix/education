@@ -39,7 +39,7 @@ def upgrade() -> None:
     sa.Column('level', sa.String(length=255), nullable=False),
     sa.Column('message', sa.String(length=255), nullable=False),
     sa.Column('data', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['sync_run_id'], ['sync_runs.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

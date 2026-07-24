@@ -41,4 +41,8 @@ class SyncLog(Base):
     message: Mapped[str] = mapped_column(String(255), nullable=False)
     data: Mapped[dict] = mapped_column(JSONB, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )

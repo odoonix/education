@@ -86,3 +86,9 @@ class SyncRunCreate(BaseModel):
     updated_records: int = 0
     error_records: int = 0
     sync_error: str | None = None
+
+class SyncLogCreate(BaseModel):
+    sync_run_id: int = 1
+    level: str = "log"
+    message: str = ""
+    data: dict

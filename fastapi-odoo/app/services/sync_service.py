@@ -1,7 +1,5 @@
 from datetime import datetime
 import functools
-import time
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.integrations.odoo_client import OdooClient, OdooClientError
@@ -9,7 +7,8 @@ from app.repositories.contact_repository import ContactRepository
 from app.repositories.product_repository import ProductRepository
 from app.repositories.sale_order_repository import SaleOrderLineRepository, SaleOrderRepository
 from app.repositories.sync_run_repository import SyncRunRepository, get_sync_run_repo
-from app.schemas.sync import SyncEntityResult, SyncResult, SyncRunCreate
+from app.repositories.sync_log_repository import SyncLogRepository
+from app.schemas.sync import SyncEntityResult, SyncLogCreate, SyncResult, SyncRunCreate
 
 
 def sync_run_decorator(sync_run_repo: SyncRunRepository = get_sync_run_repo):
@@ -22,8 +21,11 @@ def sync_run_decorator(sync_run_repo: SyncRunRepository = get_sync_run_repo):
                     sync_start_time=start,
                     sync_end_time=start,
                 )
+            # insert to db for getting sync run id
+            db_sync_run=sync_run_repo.create(sync_run)
+            
             try:
-                result = func(*args, **kwargs)
+                result = func(*args, **kwargs, run_id=db_sync_run.id)
                 if isinstance(result, SyncEntityResult):
                     sync_run.fetched_records += result.total
                     sync_run.stored_records += result.created
@@ -42,8 +44,8 @@ def sync_run_decorator(sync_run_repo: SyncRunRepository = get_sync_run_repo):
 
             finally:
                 sync_run.sync_end_time = datetime.now()
-                # save to sync_run repository
-                sync_run_repo.create(sync_run)
+                # update to sync_run repository
+                sync_run_repo.update(db_sync_run.id, sync_run)
         return wrapper
 
     return decorator
@@ -56,14 +58,14 @@ class SyncService:
         self.product_repo = ProductRepository(db)
         self.order_repo = SaleOrderRepository(db)
         self.line_repo = SaleOrderLineRepository(db)
-        # self.sync_run_repo = SyncRunRepository(db)
+        self.sync_log_repo = SyncLogRepository(db)
 
     @sync_run_decorator()
-    def sync_all(self) -> SyncResult:
+    def sync_all(self, run_id: int) -> SyncResult:
         try:
-            contact_result = self._sync_contacts()
-            product_result = self._sync_products()
-            order_result, line_result = self._sync_sale_orders_and_lines()
+            contact_result = self._sync_contacts(run_id)
+            product_result = self._sync_products(run_id)
+            order_result, line_result = self._sync_sale_orders_and_lines(run_id)
             self.db.commit()
             return SyncResult(
                 contacts=contact_result,
@@ -72,50 +74,133 @@ class SyncService:
                 sale_order_lines=line_result,
             )
 
-        except Exception:
+        except Exception as exc:
+            print(exc)
             self.db.rollback()
-            raise
+            raise exc
 
-    def _sync_contacts(self) -> SyncEntityResult:
-        created = updated = 0
+    def _sync_contacts(self, run_id: int) -> SyncEntityResult:
+        created = updated = errored = 0
         for data in self.odoo.fetch_contacts():
-            _, is_created = self.contact_repo.upsert(data)
-            if is_created:
-                created += 1
-            else:
-                updated += 1
-        total = created + updated
-        return SyncEntityResult(created=created, updated=updated, total=total)
+            try:
+                _, is_created = self.contact_repo.upsert(data)
+                if is_created:
+                    self.sync_log_repo.create(
+                        SyncLogCreate(
+                            sync_run_id=run_id,
+                            level="success",
+                            message="contact added to app db",
+                            data=data.model_dump()
+                        )
+                    )
+                    created += 1
+                else:
+                    self.sync_log_repo.create(
+                        SyncLogCreate(
+                            sync_run_id=run_id,
+                            level="success",
+                            message="contact updated in app db",
+                            data=data.model_dump()
+                        )
+                    )
+                    updated += 1
+            except Exception as exc:
+                self.sync_log_repo.create(
+                    SyncLogCreate(
+                        sync_run_id=run_id,
+                        level="error",
+                        message="failed to upsert contact in app db: " + str(exc),
+                        data=data.model_dump()
+                    )
+                )
+                errored +=1
+        total = created + updated + errored
+        return SyncEntityResult(created=created, updated=updated, errored=errored, total=total)
 
-    def _sync_products(self) -> SyncEntityResult:
-        created = updated = 0
+    def _sync_products(self, run_id: int) -> SyncEntityResult:
+        created = updated = errored = 0
         for data in self.odoo.fetch_products():
-            _, is_created = self.product_repo.upsert(data)
-            if is_created:
-                created += 1
-            else:
-                updated += 1
-        total = created + updated
-        return SyncEntityResult(created=created, updated=updated, total=total)
+            try:
+                _, is_created = self.product_repo.upsert(data)
+                if is_created:
+                    self.sync_log_repo.create(
+                        SyncLogCreate(
+                            sync_run_id=run_id,
+                            level="success",
+                            message="product added to app db",
+                            data=data.model_dump()
+                        )
+                    )
+                    created += 1
+                else:
+                    self.sync_log_repo.create(
+                        SyncLogCreate(
+                            sync_run_id=run_id,
+                            level="success",
+                            message="product updated in app db",
+                            data=data.model_dump()
+                        )
+                    )
+                    updated += 1
+            except Exception as exc:
+                self.sync_log_repo.create(
+                    SyncLogCreate(
+                        sync_run_id=run_id,
+                        level="error",
+                        message="failed to upsert product in app db: " + str(exc),
+                        data=data.model_dump()
+                    )
+                )
+                errored +=1
+        total = created + updated + errored
+        return SyncEntityResult(created=created, updated=updated, errored=errored, total=total)
 
-    def _sync_sale_orders_and_lines(self) -> tuple[SyncEntityResult, SyncEntityResult]:
-        order_created = order_updated = 0
-        line_created = line_updated = 0
+    def _sync_sale_orders_and_lines(self, run_id: int) -> tuple[SyncEntityResult, SyncEntityResult]:
+        order_created = order_updated = order_errored = 0
+        line_created = line_updated = line_errored = 0
 
         for order_data in self.odoo.fetch_sale_orders():
-            contact = self.contact_repo.get_by_odoo_id(order_data.partner_odoo_id)
-            if not contact:
-                fetched = self.odoo.fetch_contact_by_id(order_data.partner_odoo_id)
-                if fetched:
-                    contact, _ = self.contact_repo.upsert(fetched)
-                else:
-                    continue
+            try:
+                contact = self.contact_repo.get_by_odoo_id(order_data.partner_odoo_id)
+                if not contact:
+                    fetched = self.odoo.fetch_contact_by_id(order_data.partner_odoo_id)
+                    if fetched:
+                        contact, _ = self.contact_repo.upsert(fetched)
+                    else:
+                        raise Exception("contact not found in local or odoo server")
 
-            _, is_order_created = self.order_repo.upsert(order_data, contact_id=contact.id)
-            if is_order_created:
-                order_created += 1
-            else:
-                order_updated += 1
+                _, is_order_created = self.order_repo.upsert(order_data, contact_id=contact.id)
+                if is_order_created:
+                    self.sync_log_repo.create(
+                        SyncLogCreate(
+                            sync_run_id=run_id,
+                            level="success",
+                            message="order added to app db",
+                            data=order_data.model_dump()
+                        )
+                    )
+                    order_created += 1
+                else:
+                    self.sync_log_repo.create(
+                        SyncLogCreate(
+                            sync_run_id=run_id,
+                            level="success",
+                            message="order updated in app db",
+                            data=order_data.model_dump()
+                        )
+                    )
+                    order_updated += 1
+            except Exception as exc:
+                self.sync_log_repo.create(
+                    SyncLogCreate(
+                        sync_run_id=run_id,
+                        level="error",
+                        message="failed to upsert order in app db: " + str(exc),
+                        data=order_data.model_dump()
+                    )
+                )
+                errored +=1
+                continue
 
             local_order = self.order_repo.get_by_odoo_id(order_data.odoo_id)
             if not local_order:
@@ -133,27 +218,54 @@ class SyncService:
                     if product:
                         product_id = product.id
 
-                _, is_line_created = self.line_repo.upsert(
-                    line_data,
-                    sale_order_id=local_order.id,
-                    product_id=product_id,
-                )
-                if is_line_created:
-                    line_created += 1
-                else:
-                    line_updated += 1
+                try:
+                    _, is_line_created = self.line_repo.upsert(
+                        line_data,
+                        sale_order_id=local_order.id,
+                        product_id=product_id,
+                    )
+                    if is_line_created:
+                        self.sync_log_repo.create(
+                            SyncLogCreate(
+                                sync_run_id=run_id,
+                                level="success",
+                                message="order line added to app db",
+                                data=line_data.model_dump()
+                            )
+                        )
+                        line_created += 1
+                    else:
+                        self.sync_log_repo.create(
+                            SyncLogCreate(
+                                sync_run_id=run_id,
+                                level="success",
+                                message="order line updated in app db",
+                                data=line_data.model_dump()
+                            )
+                        )
+                        line_updated += 1
+                except Exception as exc:
+                    self.sync_log_repo.create(
+                        SyncLogCreate(
+                            sync_run_id=run_id,
+                            level="error",
+                            message="failed to upsert order line in app db: " + str(exc),
+                            data=line_data.model_dump()
+                        )
+                    )
+                    line_errored += 1
 
-        order_total = order_created + order_updated
-        line_total = line_created + line_updated
+        order_total = order_created + order_updated + order_errored
+        line_total = line_created + line_updated + line_errored
         return (
-            SyncEntityResult(created=order_created, updated=order_updated, total=order_total),
-            SyncEntityResult(created=line_created, updated=line_updated, total=line_total),
+            SyncEntityResult(created=order_created, updated=order_updated, errored=order_errored, total=order_total),
+            SyncEntityResult(created=line_created, updated=line_updated, errored=line_errored, total=line_total),
         )
 
     @sync_run_decorator()
-    def sync_contacts(self) -> SyncEntityResult:
+    def sync_contacts(self, run_id: int) -> SyncEntityResult:
         try:
-            result = self._sync_contacts()
+            result = self._sync_contacts(run_id)
             self.db.commit()
             return result
         except Exception:
@@ -161,9 +273,9 @@ class SyncService:
             raise
 
     @sync_run_decorator()
-    def sync_products(self) -> SyncEntityResult:
+    def sync_products(self, run_id: int) -> SyncEntityResult:
         try:
-            result = self._sync_products()
+            result = self._sync_products(run_id)
             self.db.commit()
             return result
         except Exception:
@@ -171,10 +283,10 @@ class SyncService:
             raise
 
     @sync_run_decorator()
-    def sync_sale_orders(self) -> SyncResult:
+    def sync_sale_orders(self, run_id: int) -> SyncResult:
         try:
-            contact_result = self._sync_contacts()
-            product_result = self._sync_products()
+            contact_result = self._sync_contacts(run_id)
+            product_result = self._sync_products(run_id)
             order_result, line_result = self._sync_sale_orders_and_lines()
             self.db.commit()
             return SyncResult(
