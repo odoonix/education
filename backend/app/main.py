@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from backend.app.config.settings import settings
+from app.config.settings import settings
 
 app = FastAPI(
     title=settings.APP_NAME,

@@ -4,7 +4,8 @@ services:
     image: odoo:${ODOO_VERSION}
 
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
     ports:
       - "8069:8069"
@@ -14,17 +15,96 @@ services:
       - ./docker/odoo/odoo.conf:/etc/odoo/odoo.conf
       - odoo_data:/var/lib/odoo
 
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8069/web/login')"
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
 
   db:
     image: postgres:16.2
 
-    env_file:
-      - .env
+    environment:
+      POSTGRES_DB: ${ODOO_POSTGRES_DB}
+      POSTGRES_USER: ${ODOO_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${ODOO_POSTGRES_PASSWORD}
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${ODOO_POSTGRES_USER} -d ${ODOO_POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+
+    depends_on:
+      backend-db:
+        condition: service_healthy
+
+    volumes:
+      - ./backend:/app
+      - backend_venv:/app/.venv
+
+
+  backend-db:
+    image: postgres:16.2
+
+    environment:
+      POSTGRES_DB: ${BACKEND_DB_NAME}
+      POSTGRES_USER: ${BACKEND_DB_USER}
+      POSTGRES_PASSWORD: ${BACKEND_DB_PASSWORD}
+
+    volumes:
+      - backend_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${BACKEND_DB_USER} -d ${BACKEND_DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+  nginx:
+    image: nginx:stable
+
+    depends_on:
+      - backend
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost" ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
 
 
 volumes:
   odoo_data:
   postgres_data:
+  backend_postgres_data:
+  backend_venv:

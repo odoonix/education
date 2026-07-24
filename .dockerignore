@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+.vscode
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Backend virtual environment (if exists)
+backend/.venv/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.*
+
+# Docker related
+docker-compose.override.yml
+
+# Node (if frontend added later)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Odoo runtime data
+odoo_data/
+postgres_data/
+backend_postgres_data/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.temp
