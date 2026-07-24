@@ -1,13 +1,6 @@
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.config.settings import settings
-
-engine = create_engine(
-    settings.DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-)
+from app.database.engine import engine
 
 SessionLocal = sessionmaker(
     bind=engine,

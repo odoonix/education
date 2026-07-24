@@ -2,6 +2,7 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -10,8 +11,7 @@ COPY backend/pyproject.toml .
 COPY backend/uv.lock .
 
 
-RUN pip install --no-cache-dir uv \
-    && uv sync --frozen
+RUN pip install uv && uv sync --frozen
 
 
 COPY backend/ .
