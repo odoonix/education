@@ -1,35 +1,54 @@
+# Odoo → PostgreSQL Sync
 
-<!-- /!\ Non OCA Context : Set here the badge of your runbot / runboat instance. -->
-[![Pre-commit Status](https://github.com/odoonix/education/actions/workflows/pre-commit.yml/badge.svg?branch=17.0)](https://github.com/odoonix/education/actions/workflows/pre-commit.yml?query=branch%3A17.0)
-[![Build Status](https://github.com/odoonix/education/actions/workflows/test.yml/badge.svg?branch=17.0)](https://github.com/odoonix/education/actions/workflows/test.yml?query=branch%3A17.0)
-[![codecov](https://codecov.io/gh/odoonix/education/branch/17.0/graph/badge.svg)](https://codecov.io/gh/odoonix/education)
-<!-- /!\ Non OCA Context : Set here the badge of your translation instance. -->
+A backend service that pulls **Contacts, Products, Sale Orders and Sale Order
+Lines** from Odoo (XML-RPC), maps them to an internal model, and stores them in
+PostgreSQL. Re-runnable and idempotent (no duplicates), with per-record error
+isolation and a full audit trail in `sync_runs` / `sync_logs`.
 
-<!-- /!\ do not modify above this line -->
+```
+Odoo ──XML-RPC──▶ Python Backend ──Mapping / Upsert──▶ PostgreSQL
+```
 
-# Education, moderl education management system
+## Quick start (Docker)
 
-Education management tools
+```bash
+docker compose up --build
+```
 
-<!-- /!\ do not modify below this line -->
+This brings up the whole environment: Odoo + its database, seeds Odoo with test
+data, then runs migrations and the sync. Watch the `odoo_backend` logs for the
+result. See [docs/USER.md](docs/USER.md) for details and verification.
 
-<!-- prettier-ignore-start -->
+## Local run (without Docker)
 
-[//]: # (addons)
+```bash
+cp .env.example .env        # then edit values
+pip install -e .
+alembic upgrade head        # create tables
+python -m app.main          # run the sync
+```
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+## Tests
 
-[//]: # (end addons)
+```bash
+pytest --cov=app
+```
 
-<!-- prettier-ignore-end -->
+21 tests (entities, mappers, repositories, and the sync use case), ~77% coverage.
 
-## Licenses
+## Layout
 
-This repository is licensed under [AGPL-3.0](LICENSE).
+```
+app/
+  domain/          entities, repository interfaces, ports
+  application/     DTOs, mappers, sync services, use cases
+  infrastructure/  Odoo client, SQLAlchemy models/repos, DI container
+alembic/           database migrations
+scripts/           Odoo test-data seeder
+docs/              technical & user documentation
+```
 
-However, each module can have a totally different license, as long as they adhere to Odoonix
-policy. Consult each module's `__manifest__.py` file, which contains a `license` key
-that explains its license.
+## Documentation
 
-----
-<!-- /!\ Non OCA Context : Set here the full description of your organization. -->
+- [Technical documentation](docs/TECHNICAL.md) — architecture & design decisions
+- [User documentation](docs/USER.md) — how to run and verify

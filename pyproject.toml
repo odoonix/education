@@ -1,0 +1,34 @@
+[project]
+name = "education"
+version = "0.1.0"
+description = "Odoo to PostgreSQL synchronization service"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "SQLAlchemy==2.0.46",
+    "alembic==1.18.4",
+    "psycopg[binary]",
+    "pydantic==2.12.5",
+    "dependency-injector==4.48.3",
+    "pydantic-settings==2.13.1",
+    "python-dotenv",
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.setuptools.package-dir]
+app = "app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["app"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
