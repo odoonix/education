@@ -1,9 +1,6 @@
-from typing import Callable
-
-from sqlalchemy.orm import Session
-
 from app.domain.entities.sync_run import SyncRun
 from app.domain.entities.sync_log import SyncLog
+from app.domain.ports.db_session import IDBConnection
 from app.domain.repositories.sync_run_repository import SyncRunRepository
 from app.infrastructure.database.models.sync_run import SyncRunModel
 from app.infrastructure.database.models.sync_log import SyncLogModel
@@ -11,11 +8,11 @@ from app.infrastructure.database.models.sync_log import SyncLogModel
 
 class SQLAlchemySyncRunRepository(SyncRunRepository):
 
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, db_connection: IDBConnection):
+        self._db = db_connection
 
     def create(self, sync_run: SyncRun) -> SyncRun:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = self._to_run_model(sync_run)
             session.add(model)
@@ -27,7 +24,7 @@ class SQLAlchemySyncRunRepository(SyncRunRepository):
             session.close()
 
     def finish(self, sync_run: SyncRun) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = session.get(SyncRunModel, sync_run.id)
             if model is None:
@@ -43,7 +40,7 @@ class SQLAlchemySyncRunRepository(SyncRunRepository):
             session.close()
 
     def add_log(self, sync_log: SyncLog) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             session.add(self._to_log_model(sync_log))
             session.commit()

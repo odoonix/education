@@ -1,19 +1,16 @@
-from typing import Callable
-
-from sqlalchemy.orm import Session
-
 from app.domain.entities.sale_order_line import SaleOrderLine
+from app.domain.ports.db_session import IDBConnection
 from app.domain.repositories.sale_order_line_repository import SaleOrderLineRepository
 from app.infrastructure.database.models.sale_order_line import SaleOrderLineModel
 
 
 class SQLAlchemySaleOrderLineRepository(SaleOrderLineRepository):
 
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, db_connection: IDBConnection):
+        self._db = db_connection
 
     def save(self, line: SaleOrderLine) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             session.add(self._to_model(line))
             session.commit()
@@ -21,7 +18,7 @@ class SQLAlchemySaleOrderLineRepository(SaleOrderLineRepository):
             session.close()
 
     def get_by_odoo_id(self, odoo_id: int) -> SaleOrderLine | None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = session.get(SaleOrderLineModel, odoo_id)
             return self._to_entity(model) if model else None
@@ -29,7 +26,7 @@ class SQLAlchemySaleOrderLineRepository(SaleOrderLineRepository):
             session.close()
 
     def update(self, line: SaleOrderLine) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = session.get(SaleOrderLineModel, line.odoo_id)
             if model is None:

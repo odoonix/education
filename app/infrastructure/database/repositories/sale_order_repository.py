@@ -1,19 +1,16 @@
-from typing import Callable
-
-from sqlalchemy.orm import Session
-
 from app.domain.entities.sale_order import SaleOrder
+from app.domain.ports.db_session import IDBConnection
 from app.domain.repositories.sale_order_repository import SaleOrderRepository
 from app.infrastructure.database.models.sale_order import SaleOrderModel
 
 
 class SQLAlchemySaleOrderRepository(SaleOrderRepository):
 
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, db_connection: IDBConnection):
+        self._db = db_connection
 
     def save(self, order: SaleOrder) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             session.add(self._to_model(order))
             session.commit()
@@ -21,7 +18,7 @@ class SQLAlchemySaleOrderRepository(SaleOrderRepository):
             session.close()
 
     def get_by_odoo_id(self, odoo_id: int) -> SaleOrder | None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = session.get(SaleOrderModel, odoo_id)
             return self._to_entity(model) if model else None
@@ -29,7 +26,7 @@ class SQLAlchemySaleOrderRepository(SaleOrderRepository):
             session.close()
 
     def update(self, order: SaleOrder) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = session.get(SaleOrderModel, order.odoo_id)
             if model is None:
@@ -64,4 +61,3 @@ class SQLAlchemySaleOrderRepository(SaleOrderRepository):
             state=model.state,
             total_amount=model.total_amount,
         )
-    

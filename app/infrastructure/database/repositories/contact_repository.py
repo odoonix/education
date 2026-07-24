@@ -1,19 +1,16 @@
-from typing import Callable
-
-from sqlalchemy.orm import Session
-
 from app.domain.entities.contact import Contact
+from app.domain.ports.db_session import IDBConnection
 from app.domain.repositories.contact_repository import ContactRepository
 from app.infrastructure.database.models.contact import ContactModel
 
 
 class SQLAlchemyContactRepository(ContactRepository):
 
-    def __init__(self, session_factory: Callable[[], Session]):
-        self._session_factory = session_factory
+    def __init__(self, db_connection: IDBConnection):
+        self._db = db_connection
 
     def save(self, contact: Contact) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             session.add(self._to_model(contact))
             session.commit()
@@ -21,7 +18,7 @@ class SQLAlchemyContactRepository(ContactRepository):
             session.close()
 
     def get_by_odoo_id(self, odoo_id: int) -> Contact | None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = session.get(ContactModel, odoo_id)
             return self._to_entity(model) if model else None
@@ -29,7 +26,7 @@ class SQLAlchemyContactRepository(ContactRepository):
             session.close()
 
     def update(self, contact: Contact) -> None:
-        session = self._session_factory()
+        session = self._db.get_session()
         try:
             model = session.get(ContactModel, contact.odoo_id)
             if model is None:
