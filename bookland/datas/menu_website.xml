@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-   <record id="books_menu" model="website.menu">
-            <field name="name">Books</field>
-            <field name="url">/books</field>
-            <field name="parent_id" ref="website.main_menu"/>
-            <field name="sequence" type="int">10</field>
-        </record>
-</odoo>
