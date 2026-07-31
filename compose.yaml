@@ -1,0 +1,107 @@
+services:
+  odoo-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${ODOO_DB_USER:-odoo}
+      POSTGRES_PASSWORD: ${ODOO_DB_PASSWORD:-odoo}
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  odoo:
+    image: odoo:17.0
+    depends_on:
+      odoo-db:
+        condition: service_healthy
+    environment:
+      HOST: odoo-db
+      PORT: 5432
+      USER: ${ODOO_DB_USER:-odoo}
+      PASSWORD: ${ODOO_DB_PASSWORD:-odoo}
+      ODOO_DATABASE: ${ODOO_DATABASE:-odoo}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:-admin}
+    ports:
+      - "8069:8069"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./docker/odoo/odoo.conf:/etc/odoo/odoo.conf:ro
+      - ./docker/odoo/init_odoo.sh:/init_odoo.sh:ro
+    command: ["/bin/bash", "/init_odoo.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8069/web/health', timeout=5).read()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  sync-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${SYNC_DB_DATABASE:-odoo_sync}
+      POSTGRES_USER: ${SYNC_DB_USERNAME:-odoo_sync}
+      POSTGRES_PASSWORD: ${SYNC_DB_PASSWORD:-odoo_sync}
+    volumes:
+      - sync-db-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    build:
+      context: .
+      dockerfile: sync_backend/Dockerfile
+      target: runtime
+    depends_on:
+      odoo:
+        condition: service_healthy
+      sync-db:
+        condition: service_healthy
+    env_file:
+      - .env.example
+    environment:
+      ODOO_URL: http://odoo:8069
+      SYNC_DB_HOST: sync-db
+    volumes:
+      - ./docker/odoo/seed_odoo.py:/seed/seed_odoo.py:ro
+      - ./docker/backend_start.sh:/app/backend_start.sh:ro
+    command: ["/app/backend_start.sh"]
+
+  backend-test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: sync_backend/Dockerfile
+      target: test
+    depends_on:
+      backend:
+        condition: service_completed_successfully
+      odoo:
+        condition: service_healthy
+      sync-db:
+        condition: service_healthy
+    env_file:
+      - .env.example
+    environment:
+      ODOO_URL: http://odoo:8069
+      SYNC_DB_HOST: sync-db
+      RUN_DOCKER_TESTS: "1"
+      PYTHONPATH: /app/sync_backend/src
+    volumes:
+      - ./docker/odoo/seed_odoo.py:/seed/seed_odoo.py:ro
+      - ./sync_backend/src:/app/sync_backend/src:ro
+      - ./sync_backend/tests:/app/sync_backend/tests:ro
+    command: ["uv", "run", "pytest"]
+
+volumes:
+  odoo-db-data:
+  odoo-data:
+  sync-db-data:

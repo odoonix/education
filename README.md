@@ -1,35 +1,114 @@
+# Odoonix Odoo Sync Backend
 
-<!-- /!\ Non OCA Context : Set here the badge of your runbot / runboat instance. -->
-[![Pre-commit Status](https://github.com/odoonix/education/actions/workflows/pre-commit.yml/badge.svg?branch=17.0)](https://github.com/odoonix/education/actions/workflows/pre-commit.yml?query=branch%3A17.0)
-[![Build Status](https://github.com/odoonix/education/actions/workflows/test.yml/badge.svg?branch=17.0)](https://github.com/odoonix/education/actions/workflows/test.yml?query=branch%3A17.0)
-[![codecov](https://codecov.io/gh/odoonix/education/branch/17.0/graph/badge.svg)](https://codecov.io/gh/odoonix/education)
-<!-- /!\ Non OCA Context : Set here the badge of your translation instance. -->
+This branch adds a single-process Python backend that reads Odoo 17 Contacts, Products, Sale Orders, and Sale Order Lines through XML-RPC and stores them in a separate PostgreSQL 15 database.
 
-<!-- /!\ do not modify above this line -->
+## Delivered Capabilities
 
-# Education, moderl education management system
+- Docker Compose stack with Odoo, Odoo PostgreSQL, Sync PostgreSQL, and backend services.
+- Idempotent Odoo module initialization for `base`, `contacts`, and `sale_management`.
+- Deterministic XML-RPC seed data: 5 Contacts, 5 Products, 3 Sale Orders, and 6 Sale Order Lines.
+- Full and incremental synchronization with keyset pagination.
+- Typed internal models, repository ports, SQLAlchemy repositories, and Unit of Work transaction ownership.
+- Per-record failure isolation with aggregate run summaries and record-level sync logs.
+- Alembic migrations, structured logging, bounded retry, and environment-backed settings.
 
-Education management tools
+## Architecture Summary
 
-<!-- /!\ do not modify below this line -->
+The backend follows a lightweight Ports and Adapters design:
 
-<!-- prettier-ignore-start -->
+```text
+Odoo XML-RPC -> Odoo Adapter -> Sync Service -> Repository Ports + Unit of Work -> SQLAlchemy -> Sync PostgreSQL
+```
 
-[//]: # (addons)
+Domain code is ORM-independent. Application code depends on ports. Infrastructure implements Odoo access, persistence, settings, and logging. `odoo_sync.bootstrap` wires the concrete objects.
 
-This part will be replaced when running the oca-gen-addons-table script from OCA/maintainer-tools.
+## Technology Stack
 
-[//]: # (end addons)
+Python 3.12, uv, SQLAlchemy 2, Alembic, Psycopg 3, Pydantic Settings 2, standard-library XML-RPC, Pytest, Ruff, MyPy, Docker Compose v2, Odoo 17, PostgreSQL 15.
 
-<!-- prettier-ignore-end -->
+## Prerequisites
 
-## Licenses
+- Docker Compose v2
+- Python 3.12
+- uv
 
-This repository is licensed under [AGPL-3.0](LICENSE).
+## Quick Start
 
-However, each module can have a totally different license, as long as they adhere to Odoonix
-policy. Consult each module's `__manifest__.py` file, which contains a `license` key
-that explains its license.
+```bash
+cp .env.example .env
+docker compose up --build
+```
 
-----
-<!-- /!\ Non OCA Context : Set here the full description of your organization. -->
+Odoo is exposed at `http://localhost:8069`.
+
+## Service Topology
+
+- `odoo-db`: PostgreSQL 15 for Odoo only.
+- `odoo`: Odoo 17 runtime.
+- `sync-db`: PostgreSQL 15 for synchronized data only.
+- `backend`: applies migrations, seeds Odoo, runs one full sync, then exits.
+- `backend-test`: optional test-profile backend image.
+
+## Controlled Test Data
+
+The seed script uses stable `ir.model.data` external IDs under `odoo_sync_seed`. This makes reruns update controlled records instead of creating duplicates.
+
+## Sync Commands
+
+```bash
+docker compose run --rm backend python -m odoo_sync sync --full
+docker compose run --rm backend python -m odoo_sync sync --incremental
+```
+
+Optional page size:
+
+```bash
+docker compose run --rm backend python -m odoo_sync sync --full --page-size 50
+```
+
+## Test Commands
+
+```bash
+cd sync_backend
+uv lock --check
+uv sync --frozen --all-groups
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy src tests
+uv run pytest -m unit
+uv run pytest --cov=odoo_sync --cov-branch --cov-report=term-missing
+cd ..
+```
+
+Docker-backed checks:
+
+```bash
+docker compose -p odoonix_acceptance --profile test run --rm backend-test uv run pytest -m integration
+docker compose -p odoonix_acceptance --profile test run --rm backend-test uv run pytest -m end_to_end
+```
+
+## Configuration Summary
+
+Runtime configuration is read from environment variables. See `.env.example` for local values covering Odoo URL/database/user/password, retry settings, page size, Sync PostgreSQL host/port/database/user/password, and log options.
+
+## More Documentation
+
+- [Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md)
+- [User Documentation](docs/USER_DOCUMENTATION.md)
+
+## Known Limitations
+
+- Synchronization is one-way from Odoo to Sync PostgreSQL.
+- Odoo deletions are not propagated.
+- There is no automatic scheduler.
+- There is no public HTTP API.
+- XML-RPC polling is used instead of event ingestion.
+- Incremental synchronization depends on Odoo `write_date`.
+- Simultaneous sync execution is not coordinated.
+- Per-record transactions favor failure isolation over maximum throughput.
+- Deterministic seed data is intentionally small.
+- `.env.example` values are for local development only.
+
+## Repository and License
+
+This work is added inside `PixyBoy/odoonix` and inherits the repository license.
