@@ -1,0 +1,14 @@
+{
+  "include": [
+    "sync_backend/src",
+    "sync_backend/tests"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "sync_backend",
+      "extraPaths": [
+        "sync_backend/src"
+      ]
+    }
+  ]
+}
